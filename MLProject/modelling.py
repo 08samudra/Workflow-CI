@@ -10,7 +10,7 @@ def train():
     mlflow.sklearn.autolog()
 
     with mlflow.start_run(run_name="mlflow-project-run"):
-        df = pd.read_csv("MLProject/housing_price_cleaned.csv")
+        df = pd.read_csv("housing_price_cleaned.csv")
         X = df.drop(columns="Price")
         y = df["Price"]
 
