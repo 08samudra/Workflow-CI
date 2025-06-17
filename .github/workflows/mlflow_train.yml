@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'MLProject/**'
-      - '.github/workflows/**'
+      - '.github/workflows/mlflow_train.yml'
 
 jobs:
   build:
@@ -28,4 +28,4 @@ jobs:
 
     - name: Run MLflow Project
       run: |
-        conda run -n mlflow-env mlflow run MLProject
+        conda run -n mlflow-env mlflow run .
