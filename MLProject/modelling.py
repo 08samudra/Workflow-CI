@@ -6,13 +6,13 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
 def train():
-    mlflow.set_tracking_uri("http://localhost:5000")  # atau sesuaikan dengan DagsHub jika dipakai
+    # mlflow.set_tracking_uri("http://localhost:5000")
     mlflow.set_experiment("HousingPricePrediction")
 
     mlflow.sklearn.autolog()
 
     with mlflow.start_run(run_name="mlflow-project-run"):
-        df = pd.read_csv("housing_price_cleaned.csv")
+        df = pd.read_csv("MLProject/housing_price_cleaned.csv")
         X = df.drop(columns="Price")
         y = df["Price"]
 
