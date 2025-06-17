@@ -27,23 +27,21 @@ with mlflow.start_run():
     mlflow.log_metric("r2", r2)
     mlflow.sklearn.log_model(model, "model")
 
-    # Simpan plot
-    plt.scatter(y_test, y_pred)
-    plt.xlabel("Actual")
-    plt.ylabel("Predicted")
-    plt.title("Actual vs Predicted")
-    plt.savefig("conf_matrix.png")
-    mlflow.log_artifact("conf_matrix.png")
+    # Simpan plot Actual vs Predicted
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y_test, y_pred, alpha=0.6)
+    plt.xlabel("Actual Price")
+    plt.ylabel("Predicted Price")
+    plt.title("Actual vs Predicted Price")
+    plt.tight_layout()
+    plt.savefig("actual_vs_predicted.png")
+    mlflow.log_artifact("actual_vs_predicted.png")
 
-    #Confusion Matrix
-    plt.figure(figsize=(10, 6))  # Set the figure size  
-    plt.title("Confusion Matrix")
-    plt.xlabel("Predicted")         
-    plt.ylabel("Actual")
-    plt.imshow(model.confusion_matrix_, cmap="Blues", interpolation="nearest")
-    plt.colorbar()
-    plt.savefig("confusion_matrix.png")
-    mlflow.log_artifact("confusion_matrix.png")
+    # Simpan run_id
+    with open("run_id.txt", "w") as f:
+        f.write(mlflow.active_run().info.run_id)
+    mlflow.log_artifact("run_id.txt")
+
     print(f"Mean Squared Error: {mse}")
     print(f"R^2 Score: {r2}")
     print("Model training and logging completed successfully.")
