@@ -1,77 +1,49 @@
-import argparse
+import os
 import mlflow
 import pandas as pd
 import matplotlib.pyplot as plt
-import json
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    cohen_kappa_score, roc_auc_score,
-    confusion_matrix, ConfusionMatrixDisplay,
-    classification_report
-)
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 
-# Argument parser
-parser = argparse.ArgumentParser()
-parser.add_argument("--x_train_path", type=str, default="heart_preprocessing/X_train.csv")
-parser.add_argument("--x_test_path", type=str, default="heart_preprocessing/X_test.csv")
-parser.add_argument("--y_train_path", type=str, default="heart_preprocessing/y_train.csv")
-parser.add_argument("--y_test_path", type=str, default="heart_preprocessing/y_test.csv")
-args = parser.parse_args()
+# Muat dataset
+df = pd.read_csv("housing_price_cleaned.csv")
 
-# Load dataset
-X_train = pd.read_csv(args.x_train_path)
-X_test = pd.read_csv(args.x_test_path)
-y_train = pd.read_csv(args.y_train_path).squeeze()
-y_test = pd.read_csv(args.y_test_path).squeeze()
+# Split data
+X = df.drop(columns=["Price"])
+y = df["Price"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# MLflow config (gunakan default local)
-mlflow.set_tracking_uri("file:///tmp/mlruns")
-
-with mlflow.start_run() as run:
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+# Mulai tracking
+with mlflow.start_run():
+    model = LinearRegression()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
-    # Logging parameter dan metrik
-    mlflow.log_param("n_estimators", 100)
-    mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
-    mlflow.log_metric("precision", precision_score(y_test, y_pred, average="macro"))
-    mlflow.log_metric("recall", recall_score(y_test, y_pred, average="macro"))
-    mlflow.log_metric("f1_score", f1_score(y_test, y_pred, average="macro"))
-    mlflow.log_metric("cohen_kappa", cohen_kappa_score(y_test, y_pred))
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
 
-    # ROC AUC (jika applicable)
-    if hasattr(model, "predict_proba"):
-        try:
-            y_proba = model.predict_proba(X_test)
-            auc = roc_auc_score(y_test, y_proba[:, 1]) if y_proba.shape[1] == 2 else roc_auc_score(y_test, y_proba, multi_class="ovr")
-            mlflow.log_metric("roc_auc", auc)
-        except Exception as e:
-            print(f"ROC AUC error: {e}")
+    mlflow.log_metric("mse", mse)
+    mlflow.log_metric("r2", r2)
+    mlflow.sklearn.log_model(model, "model")
 
-    # Confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot()
-    plt.tight_layout()
+    # Simpan plot
+    plt.scatter(y_test, y_pred)
+    plt.xlabel("Actual")
+    plt.ylabel("Predicted")
+    plt.title("Actual vs Predicted")
     plt.savefig("conf_matrix.png")
-    mlflow.log_artifact("conf_matrix.png", artifact_path="plots")
+    mlflow.log_artifact("conf_matrix.png")
 
-    # Classification report (txt + json)
-    with open("classification_report.txt", "w") as f:
-        f.write(classification_report(y_test, y_pred))
-    mlflow.log_artifact("classification_report.txt", artifact_path="reports")
-
-    report_dict = classification_report(y_test, y_pred, output_dict=True)
-    with open("metric_info.json", "w") as f_json:
-        json.dump(report_dict, f_json, indent=4)
-    mlflow.log_artifact("metric_info.json", artifact_path="reports")
-
-    # Simpan run_id ke file
-    with open("run_id.txt", "w") as f:
-        f.write(run.info.run_id)
-    mlflow.log_artifact("run_id.txt", artifact_path="metadata")
-
-    # Log model
-    mlflow.sklearn.log_model(model, artifact_path="model")
+    #Confusion Matrix
+    plt.figure(figsize=(10, 6))  # Set the figure size  
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted")         
+    plt.ylabel("Actual")
+    plt.imshow(model.confusion_matrix_, cmap="Blues", interpolation="nearest")
+    plt.colorbar()
+    plt.savefig("confusion_matrix.png")
+    mlflow.log_artifact("confusion_matrix.png")
+    print(f"Mean Squared Error: {mse}")
+    print(f"R^2 Score: {r2}")
+    print("Model training and logging completed successfully.")
