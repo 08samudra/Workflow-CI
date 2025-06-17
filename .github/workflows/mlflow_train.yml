@@ -22,13 +22,10 @@ jobs:
         activate-environment: mlflow-env
         python-version: 3.9
 
-    - name: Install MLflow
+    - name: Install MLflow in environment
       run: |
-        conda activate mlflow-env
-        pip install mlflow
+        conda run -n mlflow-env pip install mlflow
 
     - name: Run MLflow Project
       run: |
-        conda activate mlflow-env
-        mlflow run MLProject
-      shell: bash
+        conda run -n mlflow-env mlflow run MLProject
